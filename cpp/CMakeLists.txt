@@ -35,8 +35,10 @@ if(BUILD_MCTS)
     set(CMAKE_CUDA_FLAGS
       "-gencode arch=compute_30,code=sm_30 -gencode arch=compute_30,code=compute_30 -gencode arch=compute_37,code=sm_37 -gencode arch=compute_53,code=sm_53 -gencode arch=compute_53,code=compute_53 -gencode arch=compute_70,code=sm_70 -gencode arch=compute_70,code=compute_70"
       )
+  elseif(USE_EIGEN_BACKEND)
+    set(NEURALNET_BACKEND_SOURCES neuralnet/eigenbackend.cpp)
   else()
-    message(WARNING "${ColorBoldRed}WARNING: Using dummy neural net backend, intended for non-neural-net testing only, will fail on any code path requiring a neural net. Specify -DUSE_CUDA_BACKEND=1 to compile with CUDA to use neural net.${ColorReset}")
+    message(WARNING "${ColorBoldRed}WARNING: Using dummy neural net backend, intended for non-neural-net testing only, will fail on any code path requiring a neural net. Specify -DUSE_CUDA_BACKEND=1 to compile with CUDA, or -DUSE_EIGEN_BACKEND=1 to compile with cpu, to use neural net.${ColorReset}")
     set(NEURALNET_BACKEND_SOURCES neuralnet/dummybackend.cpp)
   endif()
 endif()
@@ -189,6 +191,12 @@ if(BUILD_MCTS)
     find_library(CUDNN_LIBRARY libcudnn.so PATHS /usr/local/cuda/lib64 /opt/cuda/lib64)
     include_directories(SYSTEM ${CUDA_INCLUDE_DIRS}) #SYSTEM is for suppressing some compiler warnings in thrust libraries
     target_link_libraries(main ${CUDNN_LIBRARY} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_LIBRARIES})
+  endif()
+
+  if(USE_EIGEN_BACKEND)
+    find_package(EIGEN3 REQUIRED)
+    include_directories(${EIGEN3_INCLUDE_DIRS})
+    message("Found Eigen3 at ${EIGEN3_INCLUDE_DIRS}")
   endif()
 
   find_package(ZLIB REQUIRED)
