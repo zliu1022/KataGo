@@ -433,7 +433,7 @@ void Sgf::iterAllUniquePositionsHelper(
       bool multiStoneSuicideLegal = true; //Tolerate suicide regardless of rules
       Loc moveLoc = buf[j].loc;
       Player movePla = buf[j].pla;
-      if(!board.isLegal(moveLoc,movePla,multiStoneSuicideLegal)) {
+      if(!board.isLegal(moveLoc,movePla,multiStoneSuicideLegal, rules.scoringRule == Rules::SCORING_CAPTURE, rules.komi - 0.5)) {
         // hist.printDebugInfo(cout, board);
         // cout << PlayerIO::playerToString(movePla) << endl;
         // cout << Location::toString(moveLoc,board) << endl;

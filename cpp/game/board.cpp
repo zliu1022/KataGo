@@ -32,7 +32,7 @@ const Hash128 Board::ZOBRIST_PASS_ENDS_PHASE = //Based on sha256 hash of Board::
 
 Board::Board()
 {
-  init(19,19);
+  init(3,3);
 }
 
 Board::Board(int x, int y)
@@ -43,6 +43,11 @@ Board::Board(int x, int y)
 
 Board::Board(const Board& other)
 {
+
+//	isCaptureGo = other.isCaptureGo;
+	lastmove=other.lastmove;//hzy
+	passnum=other.passnum;//white positive,black negative
+	//maxpassnum=maxpassnum;//white positive,black negative
   x_size = other.x_size;
   y_size = other.y_size;
 
@@ -336,28 +341,53 @@ bool Board::isOnBoard(Loc loc) const {
 }
 
 //Check if moving here is illegal.
-bool Board::isLegal(Loc loc, Player pla, bool isMultiStoneSuicideLegal) const
+bool Board::isLegal(Loc loc, Player pla, bool isMultiStoneSuicideLegal, bool isCaptureGo, int maxpassnum) const
 {
+	//cout << "komi" << maxpassnum << endl;
+//	if (isCaptureGo)cout << "cg" << endl;
+	//if (loc == PASS_LOC)cout << "ps" << endl;
+
   if(pla != P_BLACK && pla != P_WHITE)
     return false;
+  //hzy
+  if((loc != PASS_LOC)&&(!(
+	  loc >= 0 &&
+	  loc < MAX_ARR_SIZE &&
+	  (colors[loc] == C_EMPTY))))return false;
+  if (isCaptureGo&&isSuicide(loc, pla))return false;
+  if (isCaptureGo&&loc == PASS_LOC)
+  {
+	//  cout << "komi" << maxpassnum<<endl;
+	  if (maxpassnum == 0)return false;
+	  if (maxpassnum > 0 && maxpassnum > passnum&&pla == P_WHITE)return true;
+	  if (maxpassnum < 0 && maxpassnum < passnum&&pla == P_BLACK)return true;
+	  return false;
+  }
   return loc == PASS_LOC || (
-    loc >= 0 &&
-    loc < MAX_ARR_SIZE &&
-    (colors[loc] == C_EMPTY) &&
     !isKoBanned(loc) &&
     !isIllegalSuicide(loc, pla, isMultiStoneSuicideLegal)
   );
 }
 
 //Check if moving here is illegal, ignoring simple ko
-bool Board::isLegalIgnoringKo(Loc loc, Player pla, bool isMultiStoneSuicideLegal) const
+bool Board::isLegalIgnoringKo(Loc loc, Player pla, bool isMultiStoneSuicideLegal, bool isCaptureGo, int maxpassnum) const
 {
+	//cout << "komi" << maxpassnum << endl;
   if(pla != P_BLACK && pla != P_WHITE)
     return false;
+  //hzy
+  if ((loc != PASS_LOC) && (!(
+	  loc >= 0 &&
+	  loc < MAX_ARR_SIZE &&
+	  (colors[loc] == C_EMPTY))))return false;
+  if (isCaptureGo&&loc == PASS_LOC)
+  {
+	  if (maxpassnum == 0)return false;
+	  if (maxpassnum > 0 && maxpassnum > passnum&&pla == P_WHITE)return true;
+	  if (maxpassnum < 0 && maxpassnum < passnum&&pla == P_BLACK)return true;
+	  return false;
+  }
   return loc == PASS_LOC || (
-    loc >= 0 &&
-    loc < MAX_ARR_SIZE &&
-    (colors[loc] == C_EMPTY) &&
     !isIllegalSuicide(loc, pla, isMultiStoneSuicideLegal)
   );
 }
@@ -496,9 +526,9 @@ bool Board::setStone(Loc loc, Color color)
 
 
 //Attempts to play the specified move. Returns true if successful, returns false if the move was illegal.
-bool Board::playMove(Loc loc, Player pla, bool isMultiStoneSuicideLegal)
+bool Board::playMove(Loc loc, Player pla, bool isMultiStoneSuicideLegal, bool isCaptureGo, int maxpassnum)
 {
-  if(isLegal(loc,pla,isMultiStoneSuicideLegal))
+  if(isLegal(loc,pla,isMultiStoneSuicideLegal, isCaptureGo, maxpassnum))
   {
     playMoveAssumeLegal(loc,pla);
     return true;
@@ -739,13 +769,16 @@ Hash128 Board::getPosHashAfterMove(Loc loc, Player pla) const {
 //Plays the specified move, assuming it is legal.
 void Board::playMoveAssumeLegal(Loc loc, Player pla)
 {
+	lastmove = pla;//hzy
   //Pass?
   if(loc == PASS_LOC)
   {
+	  //hzy
+	  if (pla == P_BLACK)passnum--;
+	  else passnum++;
     ko_loc = NULL_LOC;
     return;
   }
-
   Player opp = getOpp(pla);
 
   //Add the new stone as an independent group
@@ -1309,12 +1342,12 @@ bool Board::searchIsLadderCapturedAttackerFirst2Libs(Loc loc, vector<Loc>& buf, 
   //Attacker: A suicide move cannot reduce the defender's liberties
   //Defender: A suicide move cannot gain liberties
   bool isMultiStoneSuicideLegal = false;
-  if(isLegal(move0,opp,isMultiStoneSuicideLegal)) {
+  if(isLegal(move0,opp,isMultiStoneSuicideLegal,false,0)) {//hzy
     MoveRecord record = playMoveRecorded(move0,opp);
     move0Works = searchIsLadderCaptured(loc,true,buf);
     undo(record);
   }
-  if(isLegal(move1,opp,isMultiStoneSuicideLegal)) {
+  if(isLegal(move1,opp,isMultiStoneSuicideLegal, false, 0)) {//hzy
     MoveRecord record = playMoveRecorded(move1,opp);
     move1Works = searchIsLadderCaptured(loc,true,buf);
     undo(record);
@@ -1536,7 +1569,7 @@ bool Board::searchIsLadderCaptured(Loc loc, bool defenderFirst, vector<Loc>& buf
     //Illegal move - treat it the same as a failed move, but don't return up a level so that we
     //loop again and just try the next move.
     bool isMultiStoneSuicideLegal = false;
-    if(!isLegal(move,p,isMultiStoneSuicideLegal)) {
+    if(!isLegal(move,p,isMultiStoneSuicideLegal,false,0)) {//hzy
       returnValue = isDefender;
       returnedFromDeeper = false;
       // if(print) cout << "illegal " << endl;
@@ -1556,8 +1589,19 @@ bool Board::searchIsLadderCaptured(Loc loc, bool defenderFirst, vector<Loc>& buf
 
 }
 
-void Board::calculateArea(Color* result, bool nonPassAliveStones, bool safeBigTerritories, bool unsafeBigTerritories, bool isMultiStoneSuicideLegal) const {
-  for(int i = 0; i<MAX_ARR_SIZE; i++)
+void Board::calculateArea(Color* result, bool nonPassAliveStones, bool safeBigTerritories, bool unsafeBigTerritories, bool isMultiStoneSuicideLegal,bool isCaptureGo) const {
+	if (isCaptureGo)
+	{
+		for (int y = 0; y < y_size; y++) {
+			for (int x = 0; x < x_size; x++) {
+				Loc loc = Location::getLoc(x, y, x_size);
+				result[loc] = C_EMPTY;
+			}
+		}
+		return;
+
+  }
+	for(int i = 0; i<MAX_ARR_SIZE; i++)
     result[i] = C_EMPTY;
   calculateAreaForPla(P_BLACK,safeBigTerritories,unsafeBigTerritories,isMultiStoneSuicideLegal,result);
   calculateAreaForPla(P_WHITE,safeBigTerritories,unsafeBigTerritories,isMultiStoneSuicideLegal,result);

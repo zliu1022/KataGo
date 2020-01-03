@@ -46,6 +46,7 @@ BoardHistory::BoardHistory()
   std::fill(blackKoProhibited, blackKoProhibited+Board::MAX_ARR_SIZE, false);
   std::fill(whiteKoProhibited, whiteKoProhibited+Board::MAX_ARR_SIZE, false);
   std::fill(secondEncoreStartColors, secondEncoreStartColors+Board::MAX_ARR_SIZE, C_EMPTY);
+  //if (rules.scoringRule == Rules::SCORING_CAPTURE)initialBoard.isCaptureGo = true;
 }
 
 BoardHistory::~BoardHistory()
@@ -68,6 +69,7 @@ BoardHistory::BoardHistory(const Board& board, Player pla, const Rules& r, int e
    isGameFinished(false),winner(C_EMPTY),finalWhiteMinusBlackScore(0.0f),
    isNoResult(false),isResignation(false)
 {
+	//if (rules.scoringRule == Rules::SCORING_CAPTURE)initialBoard.isCaptureGo = true;
   std::fill(wasEverOccupiedOrPlayed, wasEverOccupiedOrPlayed+Board::MAX_ARR_SIZE, false);
   std::fill(superKoBanned, superKoBanned+Board::MAX_ARR_SIZE, false);
   std::fill(blackKoProhibited, blackKoProhibited+Board::MAX_ARR_SIZE, false);
@@ -194,8 +196,16 @@ BoardHistory& BoardHistory::operator=(BoardHistory&& other) noexcept
   return *this;
 }
 
-void BoardHistory::clear(const Board& board, Player pla, const Rules& r, int ePhase) {
+void BoardHistory::clear(const Board& board2, Player pla, const Rules& r, int ePhase) {
   rules = r;
+  Board board = board2;
+//  if (r.scoringRule == Rules::SCORING_CAPTURE)board.isCaptureGo = true;
+  /*if (r.scoringRule == Rules::SCORING_CAPTURE)
+  {
+	  cout << endl << endl << "boardhistory::clear    is    capture" << endl;
+  }
+  else
+	  cout << endl << endl << "boardhistory::clear    not    capture" << endl;*/
   moveHistory.clear();
   koHashHistory.clear();
   koHistoryLastClearedBeginningMoveIdx = 0;
@@ -349,6 +359,7 @@ float BoardHistory::whiteKomiAdjustmentForDraws(double drawEquivalentWinsForWhit
   //Basically we model it as if the final score were jittered by a uniform draw from [-0.5,0.5].
   //E.g. if komi from self perspective is 7 and a draw counts as 0.75 wins and 0.25 losses,
   //then komi input should be as if it was 7.25, which in a jigo game when jittered by 0.5 gives white 75% wins and 25% losses.
+	if (rules.scoringRule == Rules::SCORING_CAPTURE)return 0;//hzy
   bool komiIsInteger = ((int)rules.komi == rules.komi);
   float drawAdjustment = !komiIsInteger ? 0.0f : (float)(drawEquivalentWinsForWhite - 0.5);
   return drawAdjustment;
@@ -372,7 +383,7 @@ int BoardHistory::countAreaScoreWhiteMinusBlack(const Board& board, Color area[B
   bool nonPassAliveStones = true;
   bool safeBigTerritories = true;
   bool unsafeBigTerritories = true;
-  board.calculateArea(area,nonPassAliveStones,safeBigTerritories,unsafeBigTerritories,rules.multiStoneSuicideLegal);
+  board.calculateArea(area,nonPassAliveStones,safeBigTerritories,unsafeBigTerritories,rules.multiStoneSuicideLegal, rules.scoringRule==Rules::SCORING_CAPTURE);
   for(int y = 0; y<board.y_size; y++) {
     for(int x = 0; x<board.x_size; x++) {
       Loc loc = Location::getLoc(x,y,board.x_size);
@@ -391,7 +402,7 @@ int BoardHistory::countTerritoryAreaScoreWhiteMinusBlack(const Board& board, Col
   bool nonPassAliveStones = false;
   bool safeBigTerritories = true;
   bool unsafeBigTerritories = false;
-  board.calculateArea(area,nonPassAliveStones,safeBigTerritories,unsafeBigTerritories,rules.multiStoneSuicideLegal);
+  board.calculateArea(area,nonPassAliveStones,safeBigTerritories,unsafeBigTerritories,rules.multiStoneSuicideLegal, rules.scoringRule == Rules::SCORING_CAPTURE);
   for(int y = 0; y<board.y_size; y++) {
     for(int x = 0; x<board.x_size; x++) {
       Loc loc = Location::getLoc(x,y,board.x_size);
@@ -419,20 +430,31 @@ int BoardHistory::countTerritoryAreaScoreWhiteMinusBlack(const Board& board, Col
 
 void BoardHistory::endAndScoreGameNow(const Board& board, Color area[Board::MAX_ARR_SIZE]) {
   int boardScore;
-  if(rules.scoringRule == Rules::SCORING_AREA)
-    boardScore = countAreaScoreWhiteMinusBlack(board,area);
-  else if(rules.scoringRule == Rules::SCORING_TERRITORY)
-    boardScore = countTerritoryAreaScoreWhiteMinusBlack(board,area);
+  if (rules.scoringRule == Rules::SCORING_AREA)
+	  boardScore = countAreaScoreWhiteMinusBlack(board, area);
+  else if (rules.scoringRule == Rules::SCORING_TERRITORY)
+	  boardScore = countTerritoryAreaScoreWhiteMinusBlack(board, area);
+  else if (rules.scoringRule == Rules::SCORING_CAPTURE)
+	  boardScore = 0;
   else
     ASSERT_UNREACHABLE;
 
-  finalWhiteMinusBlackScore = boardScore + whiteBonusScore + rules.komi;
-  if(finalWhiteMinusBlackScore > 0.0f)
-    winner = C_WHITE;
-  else if(finalWhiteMinusBlackScore < 0.0f)
-    winner = C_BLACK;
-  else
-    winner = C_EMPTY;
+  if (rules.scoringRule != Rules::SCORING_CAPTURE)
+  {
+	  finalWhiteMinusBlackScore = boardScore + whiteBonusScore + rules.komi;
+	  if (finalWhiteMinusBlackScore > 0.0f)
+		  winner = C_WHITE;
+	  else if (finalWhiteMinusBlackScore < 0.0f)
+		  winner = C_BLACK;
+	  else
+		  winner = C_EMPTY;
+  }
+  else//hzy
+  {
+	  finalWhiteMinusBlackScore = 0;
+	  assert(winner == P_BLACK || winner == P_WHITE);
+//	  winner = board.lastmove;
+  }
 
   isNoResult = false;
   isResignation = false;
@@ -446,12 +468,14 @@ void BoardHistory::endAndScoreGameNow(const Board& board) {
 
 
 void BoardHistory::endGameIfAllPassAlive(const Board& board) {
+	if (rules.scoringRule == Rules::SCORING_CAPTURE)return;//hzy
+
   int boardScore = 0;
   bool nonPassAliveStones = false;
   bool safeBigTerritories = false;
   bool unsafeBigTerritories = false;
   Color area[Board::MAX_ARR_SIZE];
-  board.calculateArea(area, nonPassAliveStones, safeBigTerritories, unsafeBigTerritories, rules.multiStoneSuicideLegal);
+  board.calculateArea(area, nonPassAliveStones, safeBigTerritories, unsafeBigTerritories, rules.multiStoneSuicideLegal, rules.scoringRule == Rules::SCORING_CAPTURE);
 
   for(int y = 0; y<board.y_size; y++) {
     for(int x = 0; x<board.x_size; x++) {
@@ -514,7 +538,7 @@ bool BoardHistory::isLegal(const Board& board, Loc moveLoc, Player movePla) cons
       return true;
   }
 
-  if(!board.isLegal(moveLoc,movePla,rules.multiStoneSuicideLegal))
+  if(!board.isLegal(moveLoc,movePla,rules.multiStoneSuicideLegal, rules.scoringRule == Rules::SCORING_CAPTURE, rules.komi - 0.5))
     return false;
   if(superKoBanned[moveLoc])
     return false;
@@ -574,6 +598,7 @@ bool BoardHistory::wouldBeSpightlikeEndingPass(Loc moveLoc, Player movePla, Hash
 }
 
 bool BoardHistory::passWouldEndPhase(const Board& board, Player movePla) const {
+	if (rules.scoringRule == Rules::SCORING_CAPTURE)return false;//hzy
   Loc koLocBeforeMove = board.ko_loc;
   Hash128 posHashAfterMove = board.pos_hash; //Pass cannot affect pos hash
   Hash128 koProhibitHashAfterMove =  koProhibitHash; //Pass never marks or unmarks any ko prohibitions
@@ -717,7 +742,62 @@ void BoardHistory::makeBoardMoveAssumeLegal(Board& board, Loc moveLoc, Player mo
   }
 
   //Phase transitions and game end
-  if(consecutiveEndingPasses >= 2 || isSpightlikeEndingPass) {
+  //hzy need change
+  //todo 
+  if (rules.scoringRule == Rules::SCORING_CAPTURE)
+  {
+	  int blackStonesMinusWhite = 0;
+	  if (movePla == P_BLACK)blackStonesMinusWhite--;
+	  blackStonesMinusWhite -= board.passnum;
+	  for (int y = 0; y < board.y_size; y++) {
+		  for (int x = 0; x < board.x_size; x++) {
+			  Loc loc = Location::getLoc(x, y, board.x_size);
+			  Color tmpcol = board.colors[loc];
+			  if (tmpcol == C_BLACK)blackStonesMinusWhite++;
+			  else if (tmpcol == C_WHITE)blackStonesMinusWhite--;
+		  }
+	  }
+	  //是否被提子
+	  if (blackStonesMinusWhite != 0)
+	  {
+		  if (blackStonesMinusWhite > 0)
+		  {
+			  winner = P_BLACK;
+			  assert(movePla == P_BLACK);
+		  }
+		  if (blackStonesMinusWhite < 0)
+		  {
+			  winner = P_WHITE;
+			  assert(movePla == P_WHITE);
+		  }
+		  endAndScoreGameNow(board);
+	 }
+	  if (!isGameFinished)//检查对手是否还有可以走的地方
+	  {
+		  bool oppoHasLegalMove = false;
+		  for (int y = 0; y < board.y_size; y++)
+		  {
+			  for (int x = 0; x < board.x_size; x++)
+			  {
+				  Loc loc = Location::getLoc(x, y, board.x_size);
+				  if (board.isLegal(loc, nextPla, false, rules.scoringRule == Rules::SCORING_CAPTURE, rules.komi - 0.5))
+				  {
+					  oppoHasLegalMove = true;
+					  break;
+
+				  }
+			  }
+			  if (oppoHasLegalMove)break;
+		  }
+		  if (!oppoHasLegalMove)//对手没地方走
+		  {
+			  winner = movePla;
+			  endAndScoreGameNow(board);
+		  }
+	  }
+
+  }
+  else  if(consecutiveEndingPasses >= 2 || isSpightlikeEndingPass) {
     if(rules.scoringRule == Rules::SCORING_AREA) {
       assert(encorePhase <= 0);
       endAndScoreGameNow(board);

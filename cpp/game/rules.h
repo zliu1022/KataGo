@@ -14,6 +14,7 @@ struct Rules {
 
   static const int SCORING_AREA = 0;
   static const int SCORING_TERRITORY = 1;
+  static const int SCORING_CAPTURE = 100;//hzy
   int scoringRule;
 
   bool multiStoneSuicideLegal;
@@ -44,7 +45,7 @@ struct Rules {
   std::string toString() const;
 
   static const Hash128 ZOBRIST_KO_RULE_HASH[4];
-  static const Hash128 ZOBRIST_SCORING_RULE_HASH[2];
+  static const Hash128 ZOBRIST_SCORING_RULE_HASH[3];
   static const Hash128 ZOBRIST_MULTI_STONE_SUICIDE_HASH;
 
 };

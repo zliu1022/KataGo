@@ -212,7 +212,7 @@ int MainCmds::selfplay(int argc, const char* const* argv) {
   const string searchRandSeedBase = Global::uint64ToHexString(seedRand.nextUInt64());
 
   //Width and height of the board to use when writing data, typically 19
-  const int dataBoardLen = cfg.getInt("dataBoardLen",9,37);
+  const int dataBoardLen = cfg.getInt("dataBoardLen",1,37);
   //Max number of games that we will allow to be queued up and not written out
   const int maxDataQueueSize = cfg.getInt("maxDataQueueSize",1,1000000);
   const int maxRowsPerTrainFile = cfg.getInt("maxRowsPerTrainFile",1,100000000);
@@ -464,7 +464,7 @@ int MainCmds::selfplay(int argc, const char* const* argv) {
 
       const InitialPosition* initialPosition = nextInitialPosition;
       nextInitialPosition = NULL;
-
+	  
       int64_t gameIdx;
       MatchPairer::BotSpec botSpecB;
       MatchPairer::BotSpec botSpecW;

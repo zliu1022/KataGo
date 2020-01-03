@@ -73,11 +73,13 @@ struct Board
   //Initialization------------------------------
   //Initialize the zobrist hash.
   //MUST BE CALLED AT PROGRAM START!
+
+
   static void initHash();
 
   //Board parameters and Constants----------------------------------------
 
-  static const int MAX_LEN = 19;  //Maximum edge length allowed for the board
+  static const int MAX_LEN = 9;  //Maximum edge length allowed for the board
   static const int MAX_PLAY_SIZE = MAX_LEN * MAX_LEN;  //Maximum number of playable spaces
   static const int MAX_ARR_SIZE = (MAX_LEN+1)*(MAX_LEN+2)+1; //Maximum size of arrays needed
 
@@ -156,9 +158,9 @@ struct Board
   //Check if moving here is illegal due to simple ko
   bool isKoBanned(Loc loc) const;
   //Check if moving here is legal.
-  bool isLegal(Loc loc, Player pla, bool isMultiStoneSuicideLegal) const;
+  bool isLegal(Loc loc, Player pla, bool isMultiStoneSuicideLegal,bool isCaptureGo,int maxpassnum) const;
   //Check if moving here is legal, ignoring simple ko
-  bool isLegalIgnoringKo(Loc loc, Player pla, bool isMultiStoneSuicideLegal) const;
+  bool isLegalIgnoringKo(Loc loc, Player pla, bool isMultiStoneSuicideLegal, bool isCaptureGo, int maxpassnum) const;
   //Check if this location is on the board
   bool isOnBoard(Loc loc) const;
   //Check if this location contains a simple eye for the specified player.
@@ -179,7 +181,7 @@ struct Board
   bool setStone(Loc loc, Color color);
 
   //Attempts to play the specified move. Returns true if successful, returns false if the move was illegal.
-  bool playMove(Loc loc, Player pla, bool isMultiStoneSuicideLegal);
+  bool playMove(Loc loc, Player pla, bool isMultiStoneSuicideLegal, bool isCaptureGo, int maxpassnum);
 
   //Plays the specified move, assuming it is legal.
   void playMoveAssumeLegal(Loc loc, Player pla);
@@ -210,7 +212,7 @@ struct Board
   //If unsafeBigTerritories, also marks for each pla empty regions bordered by pla stones and no opp stones, regardless.
   //All other points are marked as C_EMPTY.
   //[result] must be a buffer of size MAX_ARR_SIZE and will get filled with the result
-  void calculateArea(Color* result, bool nonPassAliveStones, bool safeBigTerritories, bool unsafeBigTerritories, bool isMultiStoneSuicideLegal) const;
+  void calculateArea(Color* result, bool nonPassAliveStones, bool safeBigTerritories, bool unsafeBigTerritories, bool isMultiStoneSuicideLegal, bool isCaptureGo) const;
 
   //Run some basic sanity checks on the board state, throws an exception if not consistent, for testing/debugging
   void checkConsistency() const;
@@ -219,6 +221,12 @@ struct Board
   static void printBoard(std::ostream& out, const Board& board, Loc markLoc, const std::vector<Move>* hist);
 
   //Data--------------------------------------------
+
+  //bool isCaptureGo = false;
+ // bool isCaptureGo = false;
+  Player lastmove = P_WHITE;//hzy
+  int passnum = 0;//white positive,black negative
+ // int maxpassnum = 0;//white positive,black negative
 
   int x_size;                  //Horizontal size of board
   int y_size;                  //Vertical size of board

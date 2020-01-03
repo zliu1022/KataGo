@@ -15,7 +15,7 @@ void Tests::runBoardAreaTests() {
       bool safeBigTerritories = (mode >= 2);
       bool unsafeBigTerritories = (mode >= 4);
       Board copy(board);
-      copy.calculateArea(result,nonPassAliveStones,safeBigTerritories,unsafeBigTerritories,multiStoneSuicideLegal);
+      copy.calculateArea(result,nonPassAliveStones,safeBigTerritories,unsafeBigTerritories,multiStoneSuicideLegal,false);//hzy
       out << "Safe big territories " << safeBigTerritories << " "
       << "Unsafe big territories " << unsafeBigTerritories << " "
       << "Non pass alive stones " << nonPassAliveStones << " "
@@ -1291,7 +1291,7 @@ o.o.xxoxo
     bool nonPassAliveStones = false;
     bool safeBigTerritories = true;
     bool unsafeBigTerritories = false;
-    board.calculateArea(result,nonPassAliveStones,safeBigTerritories,unsafeBigTerritories,multiStoneSuicideLegal);
+    board.calculateArea(result,nonPassAliveStones,safeBigTerritories,unsafeBigTerritories,multiStoneSuicideLegal,false);//hzy
 
     out << endl;
     out << "NonPassAliveSelfConn black" << endl;

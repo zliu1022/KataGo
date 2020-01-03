@@ -206,7 +206,7 @@ void LZSample::parse(
   {
     Move move = moves[7-i-1];
     bool multiStoneSuicideLegal = true; //True for LZ
-    bool suc = board.isLegal(move.loc,move.pla,multiStoneSuicideLegal);
+    bool suc = board.isLegal(move.loc,move.pla,multiStoneSuicideLegal, hist.rules.scoringRule == Rules::SCORING_CAPTURE, hist.rules.komi - 0.5);
     if(!suc)
       throw IOError(string("Leela zero illegal implied move"));
 

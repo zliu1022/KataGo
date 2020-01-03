@@ -1,6 +1,6 @@
 #include "../core/rand.h"
 #include "../core/os.h"
-
+#pragma comment(lib, "ws2_32.lib")
 #ifdef OS_IS_WINDOWS
   #include <winsock.h>
 #endif

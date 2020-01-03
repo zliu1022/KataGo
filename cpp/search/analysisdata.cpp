@@ -1,5 +1,5 @@
 #include "../search/analysisdata.h"
-
+ 
 AnalysisData::AnalysisData()
   :move(Board::NULL_LOC),
    numVisits(0),

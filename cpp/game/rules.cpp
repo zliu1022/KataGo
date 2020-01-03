@@ -61,7 +61,7 @@ set<string> Rules::koRuleStrings() {
   return {"SIMPLE","POSITIONAL","SITUATIONAL","SPIGHT"};
 }
 set<string> Rules::scoringRuleStrings() {
-  return {"AREA","TERRITORY"};
+  return {"AREA","TERRITORY" ,"CAPTURE" };
 }
 int Rules::parseKoRule(const string& s) {
   if(s == "SIMPLE") return Rules::KO_SIMPLE;
@@ -73,7 +73,8 @@ int Rules::parseKoRule(const string& s) {
 
 int Rules::parseScoringRule(const string& s) {
   if(s == "AREA") return Rules::SCORING_AREA;
-  else if(s == "TERRITORY") return Rules::SCORING_TERRITORY;
+  else if (s == "TERRITORY") return Rules::SCORING_TERRITORY;
+  else if (s == "CAPTURE") return Rules::SCORING_CAPTURE;
   else throw StringError("Rules::parseScoringRule: Invalid scoring rule: " + s);
 }
 string Rules::writeKoRule(int koRule) {
@@ -85,7 +86,8 @@ string Rules::writeKoRule(int koRule) {
 }
 string Rules::writeScoringRule(int scoringRule) {
   if(scoringRule == Rules::SCORING_AREA) return string("AREA");
-  if(scoringRule == Rules::SCORING_TERRITORY) return string("TERRITORY");
+  if (scoringRule == Rules::SCORING_TERRITORY) return string("TERRITORY");
+  if (scoringRule == Rules::SCORING_CAPTURE) return string("CAPTURE");
   return string("UNKNOWN");
 }
 
@@ -174,7 +176,8 @@ bool Rules::tryParseRules(const string& ss, Rules& buf) {
       }
       if(startsWithAndStrip(s,"score")) {
         if(startsWithAndStrip(s,"area")) rules.scoringRule = Rules::SCORING_AREA;
-        else if(startsWithAndStrip(s,"territory")) rules.scoringRule = Rules::SCORING_TERRITORY;
+		else if (startsWithAndStrip(s, "territory")) rules.scoringRule = Rules::SCORING_TERRITORY;
+		else if (startsWithAndStrip(s, "capture")) rules.scoringRule = Rules::SCORING_CAPTURE;
         else return false;
         continue;
       }
@@ -214,9 +217,10 @@ const Hash128 Rules::ZOBRIST_KO_RULE_HASH[4] = {
   Hash128(0x5b2096e48241d21bULL, 0x23cc18d4e85cd67fULL),  //Based on sha256 hash of Rules::KO_SPIGHT
 };
 
-const Hash128 Rules::ZOBRIST_SCORING_RULE_HASH[2] = {
+const Hash128 Rules::ZOBRIST_SCORING_RULE_HASH[3] = {//hzy
   Hash128(0x8b3ed7598f901494ULL, 0x1dfd47ac77bce5f8ULL),  //Based on sha256 hash of Rules::SCORING_AREA
   Hash128(0x381345dc357ec982ULL, 0x03ba55c026026b56ULL),  //Based on sha256 hash of Rules::SCORING_TERRITORY
+  Hash128(0xA6B2190E3050CD1CULL, 0x2E2041BBF81B06A7ULL),  //Based on sha256 hash of Rules::SCORING_CAPTURE //hzy
 };
 
 const Hash128 Rules::ZOBRIST_MULTI_STONE_SUICIDE_HASH =  //Based on sha256 hash of Rules::ZOBRIST_MULTI_STONE_SUICIDE_HASH

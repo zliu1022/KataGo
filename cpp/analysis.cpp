@@ -553,7 +553,7 @@ int MainCmds::analysis(int argc, const char* const* argv) {
       }
 
       bool multiStoneSuicideLegal = true; //Tolerate suicide in the moves regardless of stated rules
-      if(!board.isLegal(moveLoc,movePla,multiStoneSuicideLegal)) {
+      if(!board.isLegal(moveLoc,movePla,multiStoneSuicideLegal,rules.scoringRule==Rules::SCORING_CAPTURE,rules.komi-0.5)) {
         reportErrorForId(rbase.id, "moves", "Illegal move " + Global::intToString(turnNumber) + ": " + Location::toString(moveLoc,board));
         foundIllegalMove = true;
         break;

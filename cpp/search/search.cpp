@@ -253,6 +253,8 @@ void Search::setPlayerAndClearHistory(Player pla) {
 void Search::setRulesAndClearHistory(Rules rules, int encorePhase) {
   clearSearch();
   rootBoard.clearSimpleKoLoc();
+  
+//  if (rules.scoringRule == Rules::SCORING_CAPTURE)rootBoard.isCaptureGo = true;
   rootHistory.clear(rootBoard,rootPla,rules,encorePhase);
   rootKoHashTable->recompute(rootHistory);
 }
@@ -308,7 +310,7 @@ bool Search::isLegalTolerant(Loc moveLoc, Player movePla) const {
   if(movePla != rootPla) {
     Board copy = rootBoard;
     copy.clearSimpleKoLoc();
-    return copy.isLegal(moveLoc,movePla,multiStoneSuicideLegal);
+    return copy.isLegal(moveLoc,movePla,multiStoneSuicideLegal, rootHistory.rules.scoringRule == Rules::SCORING_CAPTURE, rootHistory.rules.komi - 0.5);
   }
   else {
     //Don't require that the move is legal for the history, merely the board, so that
@@ -316,9 +318,9 @@ bool Search::isLegalTolerant(Loc moveLoc, Player movePla) const {
     //In the encore, we also need to ignore the simple ko loc, since the board itself will report a move as illegal
     //when actually it is a legal pass-for-ko.
     if(rootHistory.encorePhase >= 1)
-      return rootBoard.isLegalIgnoringKo(moveLoc,rootPla,multiStoneSuicideLegal);
+      return rootBoard.isLegalIgnoringKo(moveLoc,rootPla,multiStoneSuicideLegal, rootHistory.rules.scoringRule == Rules::SCORING_CAPTURE, rootHistory.rules.komi - 0.5);
     else
-      return rootBoard.isLegal(moveLoc,rootPla,multiStoneSuicideLegal);
+      return rootBoard.isLegal(moveLoc,rootPla,multiStoneSuicideLegal, rootHistory.rules.scoringRule == Rules::SCORING_CAPTURE, rootHistory.rules.komi - 0.5);
   }
 }
 
@@ -1067,7 +1069,7 @@ void Search::computeRootValues(Logger& logger) {
     nonPassAliveStones,
     safeBigTerritories,
     unsafeBigTerritories,
-    isMultiStoneSuicideLegal
+    isMultiStoneSuicideLegal, rootHistory.rules.scoringRule == Rules::SCORING_CAPTURE
   );
 
   //Grab a neural net evaluation for the current position and use that as the center

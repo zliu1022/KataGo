@@ -228,8 +228,8 @@ struct GTPEngine {
     //Initial setup
     bool wasDefault = false;
     if(boardXSize == -1 || boardYSize == -1) {
-      boardXSize = 19;
-      boardYSize = 19;
+      boardXSize = 3;
+      boardYSize = 3;
       wasDefault = true;
     }
 
@@ -1364,7 +1364,7 @@ int MainCmds::gtp(int argc, const char* const* argv) {
               Loc moveLoc = sgf->moves[i].loc;
               Player movePla = sgf->moves[i].pla;
               bool multiStoneSuicideLegal = true; //Tolerate suicide regardless of our own rules
-              if(!sgfBoard.isLegal(moveLoc,movePla,multiStoneSuicideLegal)) {
+              if(!sgfBoard.isLegal(moveLoc,movePla,multiStoneSuicideLegal, sgfHist.rules.scoringRule == Rules::SCORING_CAPTURE, sgfHist.rules.komi - 0.5)) {
                 throw StringError("Illegal move");
               }
               sgfHist.makeBoardMoveAssumeLegal(sgfBoard,moveLoc,movePla,NULL);

@@ -311,8 +311,8 @@ BC50 BC50 x 52 y 20
  6 . . . . . .
 )%%");
 
-    board.playMove(Location::ofString("B2",board),P_BLACK,true);
-    board2.playMove(Location::ofString("F1",board),P_WHITE,true);
+    board.playMove(Location::ofString("B2",board),P_BLACK,true,false,0);//hzy
+    board2.playMove(Location::ofString("F1",board),P_WHITE,true, false, 0);//hzy
     out << board << endl;
     out << board2 << endl;
 
@@ -1447,7 +1447,7 @@ void Tests::runBoardUndoTest() {
         //Maximum range of board location values when 19x19:
         int numLocs = (19+1)*(19+2)+1;
         loc = (Loc)rand.nextUInt(numLocs);
-        if(boards[n].isLegal(loc,pla,multiStoneSuicideLegal))
+        if(boards[n].isLegal(loc,pla,multiStoneSuicideLegal, false, 0))//hzy
           break;
       }
 
@@ -1539,9 +1539,9 @@ void Tests::runBoardStressTest() {
     bool isLegal[numBoards];
     bool suc[numBoards];
     for(int i = 0; i<numBoards; i++) {
-      isLegal[i] = boards[i].isLegal(locs[i],pla,multiStoneSuicideLegal[i]);
+      isLegal[i] = boards[i].isLegal(locs[i],pla,multiStoneSuicideLegal[i], false, 0);
       testAssert(boardsSeemEqual(copies[i],boards[i]));
-      suc[i] = boards[i].playMove(locs[i],pla,multiStoneSuicideLegal[i]);
+      suc[i] = boards[i].playMove(locs[i],pla,multiStoneSuicideLegal[i],false,0);//hzy
     }
 
     for(int i = 0; i<numBoards; i++) {
@@ -1569,7 +1569,7 @@ void Tests::runBoardStressTest() {
         }
         else if(copy.isSuicide(loc,pla)) {
           testAssert(board.colors[loc] == C_EMPTY);
-          testAssert(board.isLegal(loc,pla,multiStoneSuicideLegal[i]));
+          testAssert(board.isLegal(loc,pla,multiStoneSuicideLegal[i], false, 0));
           testAssert(multiStoneSuicideLegal[i]);
           suicideCount++;
         }

@@ -197,7 +197,7 @@ int MainCmds::benchmark(int argc, const char* const* argv) {
 
   //Run on a sample position just to get any initialization and logs out of the way
   {
-    Board board(sgf->xSize,sgf->ySize);
+    Board board(boardSize,boardSize);
     BoardHistory hist;
     Player nextPla = P_BLACK;
     SearchParams thisParams = params;
@@ -253,7 +253,7 @@ int MainCmds::benchmark(int argc, const char* const* argv) {
       while(moveNum < moves.size() && moveNum < nextIdx) {
         //Tolerate suicide moves in an sgf, regardless of what the nominal rules were
         bool multiStoneSuicideLegal = true;
-        if(!board.isLegal(moves[moveNum].loc,moves[moveNum].pla,multiStoneSuicideLegal)) {
+        if(!board.isLegal(moves[moveNum].loc,moves[moveNum].pla,multiStoneSuicideLegal, hist.rules.scoringRule == Rules::SCORING_CAPTURE, hist.rules.komi - 0.5)) {
           cerr << endl;
           cerr << board << endl;
           cerr << "SGF Illegal move " << (moveNum+1) << " for " << PlayerIO::colorToChar(moves[moveNum].pla) << ": " << Location::toString(moves[moveNum].loc,board) << endl;

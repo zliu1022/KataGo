@@ -82,6 +82,7 @@ double ScoreValue::approxWhiteScoreOfScoreValueSmooth(double scoreValue, double 
 }
 
 double ScoreValue::whiteScoreMeanSqOfScoreGridded(double finalWhiteMinusBlackScore, double drawEquivalentWinsForWhite, const BoardHistory& hist) {
+	if (hist.rules.scoringRule == Rules::SCORING_CAPTURE)return 0;//hzy
   bool komiIsInteger = ((int)hist.rules.komi == hist.rules.komi);
   if(!komiIsInteger)
     return finalWhiteMinusBlackScore * finalWhiteMinusBlackScore;
@@ -618,17 +619,17 @@ void NNInputs::fillRowV3(
 
   //Features 18,19 - current territory
   Color area[Board::MAX_ARR_SIZE];
-  if(hist.rules.scoringRule == Rules::SCORING_AREA) {
+  if(hist.rules.scoringRule == Rules::SCORING_AREA|| hist.rules.scoringRule == Rules::SCORING_CAPTURE) {
     bool nonPassAliveStones = true;
     bool safeBigTerritories = true;
     bool unsafeBigTerritories = true;
-    board.calculateArea(area,nonPassAliveStones,safeBigTerritories,unsafeBigTerritories,hist.rules.multiStoneSuicideLegal);
+    board.calculateArea(area,nonPassAliveStones,safeBigTerritories,unsafeBigTerritories,hist.rules.multiStoneSuicideLegal,hist.rules.scoringRule == Rules::SCORING_CAPTURE);
   }
   else if(hist.rules.scoringRule == Rules::SCORING_TERRITORY) {
     bool nonPassAliveStones = false;
     bool safeBigTerritories = true;
     bool unsafeBigTerritories = false;
-    board.calculateArea(area,nonPassAliveStones,safeBigTerritories,unsafeBigTerritories,hist.rules.multiStoneSuicideLegal);
+    board.calculateArea(area,nonPassAliveStones,safeBigTerritories,unsafeBigTerritories,hist.rules.multiStoneSuicideLegal,hist.rules.scoringRule == Rules::SCORING_CAPTURE);
   }
   else {
     ASSERT_UNREACHABLE;
@@ -691,7 +692,7 @@ void NNInputs::fillRowV3(
     rowGlobal[8] = 1.0f;
 
   //Scoring
-  if(hist.rules.scoringRule == Rules::SCORING_AREA) {}
+  if(hist.rules.scoringRule == Rules::SCORING_AREA|| hist.rules.scoringRule == Rules::SCORING_CAPTURE) {}
   else if(hist.rules.scoringRule == Rules::SCORING_TERRITORY)
     rowGlobal[9] = 1.0f;
   else
@@ -765,7 +766,7 @@ void NNInputs::fillRowV3(
       wave = 1.0f-delta;
     else
       wave = delta-2.0f;
-
+	if (hist.rules.scoringRule == Rules::SCORING_CAPTURE)wave = 0;
     //NOTE: If ever changing which feature this is, must also update index in model.py where we multiply it into the scorebelief parity vector
     rowGlobal[13] = wave;
   }
@@ -1014,7 +1015,7 @@ void NNInputs::fillRowV4(
     bool nonPassAliveStones = false;
     bool safeBigTerritories = true;
     bool unsafeBigTerritories = false;
-    board.calculateArea(area,nonPassAliveStones,safeBigTerritories,unsafeBigTerritories,hist.rules.multiStoneSuicideLegal);
+    board.calculateArea(area,nonPassAliveStones,safeBigTerritories,unsafeBigTerritories,hist.rules.multiStoneSuicideLegal,hist.rules.scoringRule == Rules::SCORING_CAPTURE);
   }
 
   for(int y = 0; y<ySize; y++) {
@@ -1074,7 +1075,7 @@ void NNInputs::fillRowV4(
     rowGlobal[8] = 1.0f;
 
   //Scoring
-  if(hist.rules.scoringRule == Rules::SCORING_AREA) {}
+  if(hist.rules.scoringRule == Rules::SCORING_AREA || hist.rules.scoringRule == Rules::SCORING_CAPTURE) {}
   else if(hist.rules.scoringRule == Rules::SCORING_TERRITORY)
     rowGlobal[9] = 1.0f;
   else
@@ -1149,6 +1150,7 @@ void NNInputs::fillRowV4(
     else
       wave = delta-2.0f;
 
+	if (hist.rules.scoringRule == Rules::SCORING_CAPTURE)wave = 0;
     //NOTE: If ever changing which feature this is, must also update index in model.py where we multiply it into the scorebelief parity vector
     rowGlobal[13] = wave;
   }
@@ -1395,7 +1397,7 @@ void NNInputs::fillRowV5(
     rowGlobal[8] = 1.0f;
 
   //Scoring
-  if(hist.rules.scoringRule == Rules::SCORING_AREA) {}
+  if(hist.rules.scoringRule == Rules::SCORING_AREA || hist.rules.scoringRule == Rules::SCORING_CAPTURE) {}
   else if(hist.rules.scoringRule == Rules::SCORING_TERRITORY)
     rowGlobal[9] = 1.0f;
   else

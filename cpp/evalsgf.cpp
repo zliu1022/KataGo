@@ -138,7 +138,7 @@ int MainCmds::evalsgf(int argc, const char* const* argv) {
     for(int i = 0; i<moveNum; i++) {
       //Tolerate suicide moves in an sgf, regardless of what the nominal rules were
       bool multiStoneSuicideLegal = true;
-      if(!board.isLegal(moves[i].loc,moves[i].pla,multiStoneSuicideLegal)) {
+      if(!board.isLegal(moves[i].loc,moves[i].pla,multiStoneSuicideLegal, hist.rules.scoringRule == Rules::SCORING_CAPTURE, hist.rules.komi - 0.5)) {
         cerr << board << endl;
         cerr << "SGF Illegal move " << (i+1) << " for " << PlayerIO::colorToChar(moves[i].pla) << ": " << Location::toString(moves[i].loc,board) << endl;
         throw StringError("Illegal move in SGF");
@@ -150,7 +150,7 @@ int MainCmds::evalsgf(int argc, const char* const* argv) {
     vector<Loc> extraMoveLocs = Location::parseSequence(extraMoves,board);
     for(size_t i = 0; i<extraMoveLocs.size(); i++) {
       Loc loc = extraMoveLocs[i];
-      if(!board.isLegal(loc,nextPla,hist.rules.multiStoneSuicideLegal)) {
+      if(!board.isLegal(loc,nextPla,hist.rules.multiStoneSuicideLegal,hist.rules.scoringRule == Rules::SCORING_CAPTURE, hist.rules.komi - 0.5)) {
         cerr << board << endl;
         cerr << "Extra illegal move for " << PlayerIO::colorToChar(nextPla) << ": " << Location::toString(loc,board) << endl;
         throw StringError("Illegal extra move");
@@ -256,7 +256,7 @@ int MainCmds::evalsgf(int argc, const char* const* argv) {
     Player pla = nextPla;
     for(int i = 0; i<options.branch_.size(); i++) {
       Loc loc = options.branch_[i];
-      if(!copy.isLegal(loc,pla,copyHist.rules.multiStoneSuicideLegal)) {
+      if(!copy.isLegal(loc,pla,copyHist.rules.multiStoneSuicideLegal,hist.rules.scoringRule == Rules::SCORING_CAPTURE, hist.rules.komi - 0.5)) {
         cerr << board << endl;
         cerr << "Branch Illegal move for " << PlayerIO::colorToChar(pla) << ": " << Location::toString(loc,board) << endl;
         return 1;
