@@ -539,8 +539,39 @@ void Search::runWholeSearch(Logger& logger, std::atomic<bool>& shouldStopNow, bo
     SearchThread* stbuf = new SearchThread(threadIdx,*this,&logger);
 
     int64_t numPlayouts = numPlayoutsShared.load(std::memory_order_relaxed);
+    double_t curTime = 0;
+    double_t lastTime = 0;
     try {
       while(true) {
+        curTime = timer.getSeconds();
+        if (threadIdx==0 && (curTime-lastTime)>=3){ // print log every 3 second, only in No.0 thread
+          ReportedSearchValues values;
+          values = this->getRootValuesAssertSuccess();
+          int64_t visits = this->getRootVisits();
+          double lead = values.lead;
+          double winrate = 0.5 * (1.0 + (values.winValue - values.lossValue));
+          if(this->rootPla == P_BLACK || (this->rootPla != P_BLACK && this->rootPla != P_WHITE && stbuf->pla == P_BLACK)) {
+            winrate = 1.0 - winrate;
+            lead = -lead;
+          }
+
+          vector<Loc> buf;
+          vector<Loc> scratchLocs;
+          vector<double> scratchValues;
+          appendPV(buf,scratchLocs,scratchValues,this->rootNode,10);
+          char pvbuf[10*4] = "";
+          int maxpv = 10>buf.size()?buf.size():10;
+          for(int i = 0; i<maxpv; i++) {
+            if(buf[i] == Board::NULL_LOC)
+              continue;
+            sprintf(pvbuf,"%s %s",pvbuf, Location::toString(buf[i],this->rootBoard).c_str());
+          }
+
+          char b[256];
+          sprintf(b,"V: %lld P: %lld, Win: %.2f%%, Score: %.1f(%.1f) PV: %s",visits, numPlayouts,winrate*100.0, lead, values.expectedScoreStdev,pvbuf);
+          logger.write(b);
+          lastTime = curTime;
+        }
         bool shouldStop =
           (numPlayouts >= 2 && maxTime < 1.0e12 && timer.getSeconds() >= maxTime) ||
           (numPlayouts >= maxPlayouts) ||
@@ -1751,10 +1782,10 @@ void Search::playoutDescend(
   //to now being a child of the root! This is okay - subsequent visits to the node will fall through to initNodeNNOutput, and we will
   //have a weird leaf node with 2 visits worth of mixed terminal and nn values, but further visits will even hit recomputeNodeStats
   //which should clean it all it.
-  if(!isRoot && thread.history.isGameFinished &&
+  if(!isRoot && thread.history.isGameFinished /*&& gomoku
      !(searchParams.conservativePass &&
        thread.history.moveHistory.size() == rootHistory.moveHistory.size() + 1 &&
-       node.prevMoveLoc == Board::PASS_LOC)
+       node.prevMoveLoc == Board::PASS_LOC)*/
   ) {
     if(thread.history.isNoResult) {
       double winValue = 0.0;

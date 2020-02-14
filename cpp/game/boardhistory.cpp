@@ -412,6 +412,7 @@ void BoardHistory::printBasicInfo(ostream& out, const Board& board) const {
     out << "Handicap bonus score: " << whiteHandicapBonusScore << endl;
   out << "B stones captured: " << board.numBlackCaptures << endl;
   out << "W stones captured: " << board.numWhiteCaptures << endl;
+  Board::printGomoku(out, board);
 }
 
 void BoardHistory::printDebugInfo(ostream& out, const Board& board) const {
@@ -1022,6 +1023,15 @@ void BoardHistory::makeBoardMoveAssumeLegal(Board& board, Loc moveLoc, Player mo
     }
   }
 
+  //gomoku
+  if (Board::checkGomoku(movePla, board)){
+    winner = movePla;
+    isGameFinished = true;
+    isScored = true;
+    isNoResult = false;
+  } else {
+    winner = C_EMPTY;
+  }
 }
 
 KoHashTable::KoHashTable()

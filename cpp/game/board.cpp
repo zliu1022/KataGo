@@ -231,6 +231,8 @@ bool Board::isSuicide(Loc loc, Player pla) const
 //Check if moving here is would be an illegal self-capture
 bool Board::isIllegalSuicide(Loc loc, Player pla, bool isMultiStoneSuicideLegal) const
 {
+  //gomoku
+  return false;
   Player opp = getOpp(pla);
   FOREACHADJ(
     Loc adj = loc + ADJOFFSET;
@@ -645,7 +647,8 @@ void Board::undo(Board::MoveRecord record)
   }
   //Re-fill suicided stones
   if(record.capDirs == 0x10) {
-    assert(colors[loc] == C_EMPTY);
+    //gomoku
+    //assert(colors[loc] == C_EMPTY);
     addChain(loc,record.pla);
     int numUncaptured = chain_data[chain_head[loc]].num_locs;
     if(record.pla == P_BLACK)
@@ -881,11 +884,13 @@ void Board::playMoveAssumeLegal(Loc loc, Player pla)
       opp_heads_seen[num_opps_seen++] = opp_head;
 
       //Kill it?
+      /* gomoku
       if(getNumLiberties(adj) == 0)
       {
         num_captured += removeChain(adj);
         possible_ko_loc = adj;
       }
+      */
     }
   }
 
@@ -902,6 +907,7 @@ void Board::playMoveAssumeLegal(Loc loc, Player pla)
     numBlackCaptures += num_captured;
 
   //Handle suicide
+  /* gomoku
   if(getNumLiberties(loc) == 0) {
     int numSuicided = chain_data[chain_head[loc]].num_locs;
     removeChain(loc);
@@ -911,6 +917,7 @@ void Board::playMoveAssumeLegal(Loc loc, Player pla)
     else
       numWhiteCaptures += numSuicided;
   }
+  */
 }
 
 int Board::getNumImmediateLiberties(Loc loc) const
@@ -966,7 +973,8 @@ void Board::mergeChains(Loc loc1, Loc loc2)
   Loc head2 = chain_head[loc2];
 
   assert(head1 != head2);
-  assert(chain_data[head1].owner == chain_data[head2].owner);
+  //gomoku
+  //assert(chain_data[head1].owner == chain_data[head2].owner);
 
   //Make sure head2 is the smaller chain.
   if(chain_data[head1].num_locs < chain_data[head2].num_locs)
@@ -2147,8 +2155,10 @@ void Board::checkConsistency() const {
       throw StringError(errLabel + "Chain data num_locs does not match actual stone count");
     if(data.num_liberties > pseudoLibs)
       throw StringError(errLabel + "Chain data liberties exceeds pseudoliberties");
+    /* gomoku
     if(data.num_liberties <= 0)
       throw StringError(errLabel + "Chain data liberties is nonpositive");
+    */
 
     int numFoundLibs = findLiberties(loc,buf,0,0);
     if(numFoundLibs != data.num_liberties)
@@ -2438,6 +2448,137 @@ void Board::printBoard(ostream& out, const Board& board, Loc markLoc, const vect
     out << "\n";
   }
   out << "\n";
+}
+
+void Board::printGomoku(ostream& out, const Board& board) {
+  Color gomoku[Board::MAX_ARR_SIZE];
+  std::fill(gomoku, gomoku+MAX_ARR_SIZE, C_EMPTY);
+  out << "\nGomoku result\n";
+  for(int y = 0; y < board.y_size; y++)
+  {
+    for(int x = 0; x < board.x_size; x++)
+    {
+      Loc loc = Location::getLoc(x,y,board.x_size);
+      int color = board.colors[loc];
+      if (color==C_EMPTY)
+        continue;
+
+      if (checkGomokuSingle(color, x, y, board))
+        gomoku[loc]= color;
+    }
+  }
+
+  for(int y = 0; y < board.y_size; y++)
+  {
+    out << "   ";
+    for(int x = 0; x < board.x_size; x++)
+    {
+        Loc loc = Location::getLoc(x,y,board.x_size);
+        out << ((gomoku[loc]==C_BLACK)?"B":(gomoku[loc]==C_WHITE)?"W":".") << " ";
+    }
+    out << "\n";
+  }
+  out << "\n";
+}
+
+bool Board::checkGomokuSingle(int color, const int x, const int y, const Board& board) {
+  // five-in-one-row
+  int x_min = max(0, x-4);
+  for(int i = x_min; i <= x; i++)
+  {
+    if ((i+4)>board.x_size)
+      break;
+    Loc loc0 = Location::getLoc(i,y,board.x_size);
+    Loc loc1 = Location::getLoc(i+1,y,board.x_size);
+    Loc loc2 = Location::getLoc(i+2,y,board.x_size);
+    Loc loc3 = Location::getLoc(i+3,y,board.x_size);
+    Loc loc4 = Location::getLoc(i+4,y,board.x_size);
+    if (board.colors[loc0] == color && 
+      board.colors[loc1] == color && 
+      board.colors[loc2] == color && 
+      board.colors[loc3] == color && 
+      board.colors[loc4] == color)
+        return true;
+  }
+
+  // five-in-one-column
+  int y_min = max(0, y-4);
+  for(int j = y_min; j <= y; j++)
+  {
+    if ((j+4)>board.y_size)
+      break;
+    Loc loc0 = Location::getLoc(x,j,board.x_size);
+    Loc loc1 = Location::getLoc(x,j+1,board.x_size);
+    Loc loc2 = Location::getLoc(x,j+2,board.x_size);
+    Loc loc3 = Location::getLoc(x,j+3,board.x_size);
+    Loc loc4 = Location::getLoc(x,j+4,board.x_size);
+    if (board.colors[loc0] == color && 
+      board.colors[loc1] == color && 
+      board.colors[loc2] == color && 
+      board.colors[loc3] == color && 
+      board.colors[loc4] == color)
+        return true;
+  }
+
+  // five-in-one-diagonal-leftup-rightdown
+  int min_delta = min(x-x_min, y-y_min);
+  x_min = x - min_delta;
+  y_min = y - min_delta;
+  for(int i = x_min, j = y_min; i <= x && j <= y; i++,j++)
+  {
+   if ((i+4)>board.x_size || (j+4)>board.y_size)
+      break;
+    Loc loc0 = Location::getLoc(i,j,board.x_size);
+    Loc loc1 = Location::getLoc(i+1,j+1,board.x_size);
+    Loc loc2 = Location::getLoc(i+2,j+2,board.x_size);
+    Loc loc3 = Location::getLoc(i+3,j+3,board.x_size);
+    Loc loc4 = Location::getLoc(i+4,j+4,board.x_size);
+    if (board.colors[loc0] == color && 
+      board.colors[loc1] == color && 
+      board.colors[loc2] == color && 
+      board.colors[loc3] == color && 
+      board.colors[loc4] == color)
+        return true;
+  }
+
+  // five-in-one-diagonal-leftdown-rightup
+  int y_max = max(y+4, board.y_size);
+  min_delta = min(x-x_min, y_max-y);
+  x_min = x - min_delta;
+  y_max = y + min_delta;
+  for(int i = x_min, j = y_max; i <= x && j >= y; i++,j--)
+  {
+   if ((i+4)>board.x_size || (j-4)<0)
+      break;
+    Loc loc0 = Location::getLoc(i,j,board.x_size);
+    Loc loc1 = Location::getLoc(i+1,j-1,board.x_size);
+    Loc loc2 = Location::getLoc(i+2,j-2,board.x_size);
+    Loc loc3 = Location::getLoc(i+3,j-3,board.x_size);
+    Loc loc4 = Location::getLoc(i+4,j-4,board.x_size);
+    if (board.colors[loc0] == color && 
+      board.colors[loc1] == color && 
+      board.colors[loc2] == color && 
+      board.colors[loc3] == color && 
+      board.colors[loc4] == color)
+        return true;
+  }
+  return false;
+}
+
+bool Board::checkGomoku(int color, const Board& board) {
+  for(int y = 0; y < board.y_size; y++)
+  {
+    for(int x = 0; x < board.x_size; x++)
+    {
+      Loc loc = Location::getLoc(x,y,board.x_size);
+      if (board.colors[loc]==C_EMPTY)
+        continue;
+
+      if (checkGomokuSingle(color, x, y, board))
+        return true;
+    }
+  }
+  return false;
 }
 
 ostream& operator<<(ostream& out, const Board& board) {

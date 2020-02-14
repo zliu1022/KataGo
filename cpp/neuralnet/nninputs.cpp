@@ -2081,7 +2081,8 @@ void NNInputs::fillRowV7(
     }
   };
 
-  iterLadders(board, nnXLen, addLadderFeature);
+  //gomoku
+  //iterLadders(board, nnXLen, addLadderFeature);
 
   const Board& prevBoard = hideHistory ? board : hist.getRecentBoard(1);
   auto addPrevLadderFeature = [&prevBoard,posStride,featureStride,rowBin](Loc loc, int pos, const vector<Loc>& workingMoves){
@@ -2091,7 +2092,8 @@ void NNInputs::fillRowV7(
     assert(pos >= 0 && pos < NNPos::MAX_BOARD_AREA);
     setRowBin(rowBin,pos,15, 1.0f, posStride, featureStride);
   };
-  iterLadders(prevBoard, nnXLen, addPrevLadderFeature);
+  //gomoku
+  //iterLadders(prevBoard, nnXLen, addPrevLadderFeature);
 
   const Board& prevPrevBoard = hideHistory ? board : hist.getRecentBoard(2);
   auto addPrevPrevLadderFeature = [&prevPrevBoard,posStride,featureStride,rowBin](Loc loc, int pos, const vector<Loc>& workingMoves){
@@ -2101,7 +2103,8 @@ void NNInputs::fillRowV7(
     assert(pos >= 0 && pos < NNPos::MAX_BOARD_AREA);
     setRowBin(rowBin,pos,16, 1.0f, posStride, featureStride);
   };
-  iterLadders(prevPrevBoard, nnXLen, addPrevPrevLadderFeature);
+  //gomoku
+  //iterLadders(prevPrevBoard, nnXLen, addPrevPrevLadderFeature);
 
   //Features 18,19 - current territory, not counting group tax
   Color area[Board::MAX_ARR_SIZE];
