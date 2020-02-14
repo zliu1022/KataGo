@@ -881,11 +881,13 @@ void Board::playMoveAssumeLegal(Loc loc, Player pla)
       opp_heads_seen[num_opps_seen++] = opp_head;
 
       //Kill it?
+      /* gomoku
       if(getNumLiberties(adj) == 0)
       {
         num_captured += removeChain(adj);
         possible_ko_loc = adj;
       }
+      */
     }
   }
 
@@ -902,6 +904,7 @@ void Board::playMoveAssumeLegal(Loc loc, Player pla)
     numBlackCaptures += num_captured;
 
   //Handle suicide
+  /* gomoku
   if(getNumLiberties(loc) == 0) {
     int numSuicided = chain_data[chain_head[loc]].num_locs;
     removeChain(loc);
@@ -911,6 +914,7 @@ void Board::playMoveAssumeLegal(Loc loc, Player pla)
     else
       numWhiteCaptures += numSuicided;
   }
+  */
 }
 
 int Board::getNumImmediateLiberties(Loc loc) const
@@ -2147,8 +2151,10 @@ void Board::checkConsistency() const {
       throw StringError(errLabel + "Chain data num_locs does not match actual stone count");
     if(data.num_liberties > pseudoLibs)
       throw StringError(errLabel + "Chain data liberties exceeds pseudoliberties");
+    /* gomoku
     if(data.num_liberties <= 0)
       throw StringError(errLabel + "Chain data liberties is nonpositive");
+    */
 
     int numFoundLibs = findLiberties(loc,buf,0,0);
     if(numFoundLibs != data.num_liberties)
