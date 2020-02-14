@@ -243,6 +243,11 @@ struct Board
   static Board parseBoard(int xSize, int ySize, const std::string& s);
   static void printBoard(std::ostream& out, const Board& board, Loc markLoc, const std::vector<Move>* hist);
 
+  // gomoku
+  static void printGomoku(std::ostream& out, const Board& board);
+  static bool checkGomokuSingle(int color, const int x, const int y, const Board& board);
+  static bool checkGomoku(int color, const Board& board);
+
   //Data--------------------------------------------
 
   int x_size;                  //Horizontal size of board

@@ -207,7 +207,7 @@ static bool shouldResign(
 
 static void printGenmoveLog(ostream& out, const AsyncBot* bot, const NNEvaluator* nnEval, Loc moveLoc, double timeTaken, Player perspective) {
   const Search* search = bot->getSearch();
-  Board::printBoard(out, bot->getRootBoard(), moveLoc, &(bot->getRootHist().moveHistory));
+  //Board::printBoard(out, bot->getRootBoard(), moveLoc, &(bot->getRootHist().moveHistory));
   out << bot->getRootHist().rules << "\n";
   out << "Time taken: " << timeTaken << "\n";
   out << "Root visits: " << search->numRootVisits() << "\n";
@@ -1127,9 +1127,13 @@ int MainCmds::gtp(int argc, const char* const* argv) {
   }
 
   bool currentlyAnalyzing = false;
-  string line;
-  while(cin) {
-    getline(cin,line);
+  //gomoku
+  string line = string{};
+  while(1) {
+    if(!getline(cin,line)){
+      cout << endl;
+      break;
+    }
 
     //Parse command, extracting out the command itself, the arguments, and any GTP id number for the command.
     string command;
@@ -1291,6 +1295,8 @@ int MainCmds::gtp(int argc, const char* const* argv) {
 
     else if(command == "clear_board") {
       engine->clearBoard();
+      //gomoku
+      engine->clearCache();
     }
 
     else if(command == "komi") {
