@@ -1,0 +1,19 @@
+loadsgf gmk0.sgf
+play W H9
+
+boardsize 15
+genmove b
+
+loadsgf gmk1.sgf
+genmove b
+
+loadsgf gmk2.sgf
+genmove w
+
+loadsgf gmk3.sgf
+genmove w
+genmove b
+genmove w
+genmove b
+genmove w
+
